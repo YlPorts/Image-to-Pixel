@@ -5,3 +5,8 @@ _screenshots/
 *.log
 .DS_Store
 .nodepod-check/
+android/.gradle/
+android/.kotlin/
+android/**/build/
+android/local.properties
+_android-test/
