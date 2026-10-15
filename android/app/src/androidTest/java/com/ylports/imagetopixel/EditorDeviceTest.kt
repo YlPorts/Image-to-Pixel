@@ -6,6 +6,12 @@ import android.net.Uri
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.espresso.intent.Intents
+import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
+import android.app.Instrumentation.ActivityResult
+import android.content.Intent
+import android.app.Activity
+import androidx.core.content.FileProvider
 import org.json.JSONObject
 import org.json.JSONTokener
 import org.junit.After
@@ -122,5 +128,24 @@ class EditorDeviceTest {
         assertTrue(report.toString(), report.getInt("size") > 100)
         val dir = File(instrumentation.targetContext.getExternalFilesDir(null), "test-results").apply { mkdirs() }
         File(dir, "video-report.json").writeText(report.toString(2))
+    }
+
+    @Test fun systemFilePickerResultAndAndroidBack() {
+        val context = instrumentation.targetContext
+        val image = File(context.cacheDir, "shared/picker-fixture.png").apply { parentFile!!.mkdirs() }
+        val bitmap = Bitmap.createBitmap(128, 96, Bitmap.Config.ARGB_8888).apply { eraseColor(android.graphics.Color.CYAN) }
+        image.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }; bitmap.recycle()
+        val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", image)
+        Intents.init()
+        try {
+            Intents.intending(hasAction(Intent.ACTION_OPEN_DOCUMENT)).respondWith(ActivityResult(Activity.RESULT_OK, Intent().setData(uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)))
+            js("document.querySelector('.itp-empty .primary').click()")
+            waitFor { js("window.itpEditor.app.current?.name === 'picker-fixture.png' && Boolean(window.itpEditor.result)") == "true" }
+            js("document.querySelector('.itp-top > .primary').click()")
+            assertEquals("true", js("Boolean(document.querySelector('.itp-menu'))"))
+            scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+            waitFor { js("Boolean(document.querySelector('.itp-menu'))") == "false" }
+            screenshot("picker-imported")
+        } finally { Intents.release(); image.delete() }
     }
 }

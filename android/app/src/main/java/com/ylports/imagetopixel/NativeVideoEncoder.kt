@@ -8,6 +8,7 @@ import android.media.MediaMuxer
 import java.io.File
 import java.io.RandomAccessFile
 import java.nio.channels.FileChannel
+import java.nio.ByteBuffer
 import kotlin.math.roundToInt
 
 /** WebView's missing WebCodecs integration. All pixel processing stays in JS. */
@@ -23,6 +24,7 @@ class NativeVideoEncoder(
     private var frames = 0L
     private var finished = false
     private val info = MediaCodec.BufferInfo()
+    private val rgbaBuffer = ByteBuffer.allocateDirect(width * height * 4)
 
     init {
         require(fps.isFinite() && fps > 0 && fps <= 240) { "Invalid frame rate" }
@@ -57,7 +59,9 @@ class NativeVideoEncoder(
         val c = checkNotNull(codec)
         val index = input()
         RandomAccessFile(file, "r").use { raw ->
-            val rgba = raw.channel.map(FileChannel.MapMode.READ_ONLY, 0, file.length())
+            val rgba = rgbaBuffer.apply { clear(); limit(file.length().toInt()) }
+            while (rgba.hasRemaining()) check(raw.channel.read(rgba) >= 0) { "Incomplete RGBA frame" }
+            rgba.flip()
             fun rgb(x: Int, y: Int): Int {
                 if (x >= sourceWidth || y >= sourceHeight) return 0
                 val p = (y * sourceWidth + x) * 4

@@ -80,6 +80,14 @@ try {
         const name = `${android ? 'android-web' : 'original-web'}-${viewport.width}x${viewport.height}-${theme}`;
         await page.screenshot({ path: join(shots, `${name}.png`) });
         if (android) {
+          const clipped = await page.evaluate(() => {
+            const top = document.querySelector('.itp-top').getBoundingClientRect();
+            return [...document.querySelectorAll('.itp-top button')].filter(b => {
+              const r = b.getBoundingClientRect();
+              return r.width && r.height && (r.left < 0 || r.right > innerWidth || r.top < top.top || r.bottom > top.bottom);
+            }).map(b => b.getAttribute('aria-label') || b.textContent);
+          });
+          assert.deepEqual(clipped, [], 'Every toolbar control is inside the viewport');
           assert.equal(await page.getByRole('button', { name: 'Undo (Ctrl+Z)', exact: true }).isVisible(), true);
           await page.getByRole('button', { name: 'Export', exact: true }).click();
           await page.screenshot({ path: join(shots, `${name}-menu.png`) });

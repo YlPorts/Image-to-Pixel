@@ -83,7 +83,7 @@ if (window.ITPNative?.postMessage) {
       // Reveal the original history/theme/help controls on a second mobile row.
       const undo = document.querySelector('[aria-label="Undo (Ctrl+Z)"]');
       const row = undo.parentElement; row.classList.add('android-history');
-      for (const b of document.querySelectorAll('.itp-top .hide-sm.contents button')) if (b.parentElement !== row) row.append(b);
+      document.querySelector('.itp-top [title="Toggle theme (T)"]').parentElement.classList.add('android-extra');
       session = await attachSession(editor);
       window.itpAndroid.ready = true;
       await call('ready');
