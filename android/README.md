@@ -113,12 +113,19 @@ npm run test:android-web
 La prueba compara temas claro/oscuro a 360×800, 800×360 y 1440×900; verifica fuentes,
 colores, paneles, botones accesibles, los 17 dithers con igualdad exacta de RGBA,
 PNG/ZIP/GIF/sprite sheet/tileset/JSON, importación de paleta y recuperación de sesión.
+También inyecta entrada táctil para comprobar pellizco, desplazamiento del centro,
+continuación con un dedo y cancelación del gesto.
 El puente de almacenamiento se simula en esta prueba de navegador; **no sustituye
 las pruebas Android**. Las capturas y `comparison.json` se publican como artifact.
 
 La suite Android instalada prueba WebView offline, importación, PNG válido en
 MediaStore, rotaciones, restauración de imágenes y deshacer, selector de archivos,
-botón Atrás y codificador nativo. El workflow desactiva Wi-Fi/datos y activa modo avión.
+botón Atrás, gestos Android y codificador nativo. El selector se abre mediante una
+pulsación real; su respuesta se controla con Espresso Intents. Los vídeos MP4/WebM
+compatibles se leen con MediaExtractor para verificar dimensiones, fotogramas y
+marcas de tiempo, y cada fotograma atraviesa varios bloques del puente nativo.
+El workflow desactiva Wi-Fi/datos y activa modo avión en Android 15/API 35 AOSP ATD,
+con Android Emulator 35.6.11 fijado.
 Las capturas reales y logs están en **Android-device-tests**.
 
 La reproducción de cada códec depende de Android System WebView y del hardware.
