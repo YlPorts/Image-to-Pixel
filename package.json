@@ -82,7 +82,7 @@
     "check:runtime": "node scripts/nodepod-check.mjs",
     "build:android": "node scripts/build-android.mjs",
     "check:android": "node scripts/check-android.mjs",
-    "test:android-web": "node scripts/test-android-web.mjs"
+    "test:android-web": "node scripts/android-web-check.mjs"
   },
   "dependencies": {
     "shadermate": "^2.0.0"
