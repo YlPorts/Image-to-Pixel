@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: android-${{ github.ref }}
+  group: android-${{ github.head_ref || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -52,6 +52,8 @@ jobs:
           sha256sum android-artifacts/Image-to-Pixel-1.0.0-debug.apk | tee android-artifacts/SHA256SUMS.txt
           printf '### Image-to-Pixel\n\nAPK compatible with ARM64, Android 10+. Download **Image-to-Pixel-APK** below.\n\n' >> "$GITHUB_STEP_SUMMARY"
           cat android-artifacts/SHA256SUMS.txt >> "$GITHUB_STEP_SUMMARY"
+      - name: Verify assets inside the actual APK
+        run: python3 scripts/check-apk.py android-artifacts/Image-to-Pixel-1.0.0-debug.apk
       - uses: actions/upload-artifact@v4
         with:
           name: Image-to-Pixel-APK
@@ -103,10 +105,13 @@ jobs:
         with:
           api-level: 35
           arch: x86_64
-          target: google_apis
+          target: aosp_atd
           profile: pixel_4
+          emulator-build: 13610412 # Android Emulator 35.6.11, pinned for API 35
+          ram-size: 2048M
+          heap-size: 256M
           disable-animations: true
-          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -no-snapshot -feature -Vulkan
           script: bash scripts/test-android-device.sh
       - uses: actions/upload-artifact@v4
         if: always()

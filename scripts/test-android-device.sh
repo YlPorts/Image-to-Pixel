@@ -5,6 +5,9 @@ logcat_pid=''
 collect() {
   if [ -n "$logcat_pid" ]; then kill "$logcat_pid" 2>/dev/null || true; fi
   adb pull /sdcard/Android/data/com.ylports.imagetopixel/files/test-results _android-test/device 2>/dev/null || true
+  free -m > _android-test/host-memory.txt
+  df -h > _android-test/host-disk.txt
+  sudo dmesg | tail -80 > _android-test/host-kernel.log || true
 }
 trap collect EXIT
 adb install -r android-artifacts/Image-to-Pixel-1.0.0-debug.apk

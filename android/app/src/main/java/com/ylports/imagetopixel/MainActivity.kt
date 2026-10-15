@@ -76,6 +76,7 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onCreate(state: Bundle?) {
+        if (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK != Configuration.UI_MODE_NIGHT_YES) setTheme(R.style.AppThemeLight)
         super.onCreate(state)
         WindowCompat.setDecorFitsSystemWindows(window, false)
         root = FrameLayout(this).apply { setBackgroundColor(Color.rgb(17, 18, 22)) }
@@ -128,11 +129,15 @@ class MainActivity : ComponentActivity() {
             webChromeClient = object : WebChromeClient() {
                 override fun onShowFileChooser(view: WebView, callback: ValueCallback<Array<Uri>>, params: FileChooserParams): Boolean {
                     chooser?.onReceiveValue(null); chooser = callback
-                    val types = params.acceptTypes.flatMap { it.split(',') }.map(String::trim).filter { it.isNotEmpty() }
+                    val accepts = params.acceptTypes.flatMap { it.split(',') }.map(String::trim).filter { it.isNotEmpty() }
+                    val unknownExtension = accepts.any { it.startsWith('.') && android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(it.drop(1)) == null }
+                    val types = accepts
                         .map { type -> if (type.startsWith('.')) android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(type.drop(1)) ?: "application/octet-stream" else type }.distinct()
                     val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).apply {
-                        type = if (types.size == 1) types[0] else "*/*"
-                        if (types.size > 1) putExtra(Intent.EXTRA_MIME_TYPES, types.toTypedArray())
+                        type = if (!unknownExtension && types.size == 1) types[0] else "*/*"
+                        // Custom .hex/.pal providers use several different MIME types.
+                        // Let the original parser validate them instead of hiding valid files.
+                        if (!unknownExtension && types.size > 1) putExtra(Intent.EXTRA_MIME_TYPES, types.toTypedArray())
                         putExtra(Intent.EXTRA_ALLOW_MULTIPLE, params.mode == FileChooserParams.MODE_OPEN_MULTIPLE)
                     }
                     try { pickFiles.launch(intent) } catch (e: Exception) { chooser = null; callback.onReceiveValue(null); notifyUser("No system file picker is available") }
@@ -240,6 +245,14 @@ class MainActivity : ComponentActivity() {
     }
 
     internal fun notifyUser(text: String) = runOnUiThread { Toast.makeText(this, text, Toast.LENGTH_LONG).show() }
+    internal fun appearance(color: String) = runOnUiThread {
+        if (Regex("#[0-9a-fA-F]{6}").matches(color)) {
+            val value = Color.parseColor(color)
+            root.setBackgroundColor(value); webView.setBackgroundColor(value)
+            val light = Color.red(value) + Color.green(value) + Color.blue(value) > 450
+            WindowInsetsControllerCompat(window, root).apply { isAppearanceLightStatusBars = light; isAppearanceLightNavigationBars = light }
+        }
+    }
     private fun immersive() {
         WindowInsetsControllerCompat(window, root).apply {
             systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE

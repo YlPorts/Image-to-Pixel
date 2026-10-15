@@ -85,11 +85,25 @@ if (window.ITPNative?.postMessage) {
       const row = undo.parentElement; row.classList.add('android-history');
       document.querySelector('.itp-top [title="Toggle theme (T)"]').parentElement.classList.add('android-extra');
       session = await attachSession(editor);
+      const appearance = () => call('appearance', { color: getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() }).catch(console.error);
+      new MutationObserver(appearance).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+      matchMedia('(prefers-color-scheme: light)').addEventListener('change', appearance);
+      appearance();
       window.itpAndroid.ready = true;
       await call('ready');
     },
   };
-  function report(error) { editor?.app.toast(error.message || String(error), { kind: 'error' }); }
+  function report(error) {
+    const message = error.message || String(error);
+    if (editor) editor.app.toast(message, { kind: 'error' });
+    else call('notify', { message }).catch(console.error);
+  }
+  document.addEventListener('click', event => {
+    const anchor = event.target.closest?.('a[download]');
+    if (!anchor || !/^(blob:|data:)/.test(anchor.href)) return;
+    event.preventDefault();
+    fetch(anchor.href).then(r => r.blob()).then(blob => platform.download(blob, anchor.download || 'pixel-art.png')).catch(report);
+  }, true);
   window.addEventListener('unhandledrejection', event => { if (editor) { event.preventDefault(); report(event.reason); } });
   window.itpAndroid = {
     ready: false, call,
@@ -128,7 +142,7 @@ if (window.ITPNative?.postMessage) {
   // Built-in Lospec slugs work even on the very first offline launch. Other
   // explicit lookups retain the original feature and are cached after success.
   const originalFetch = window.fetch.bind(window);
-  const palettes = originalFetch('../assets/offline-palettes.json').then(r => r.json());
+  const palettes = originalFetch(new URL('./offline-palettes.json', document.currentScript.src)).then(r => r.json());
   window.fetch = async (input, init) => {
     const url = typeof input === 'string' ? input : input.url;
     const m = /^https:\/\/lospec\.com\/palette-list\/([a-z0-9-]+)\.json$/.exec(url || '');

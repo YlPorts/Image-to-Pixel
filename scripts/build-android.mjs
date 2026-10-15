@@ -1,7 +1,7 @@
 // Package the complete original site, then add only Android integration assets.
 import { cpSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { join, relative } from 'node:path';
+import { join, relative, dirname } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { esbuild } from './esbuild.mjs';
@@ -14,13 +14,25 @@ if (!process.argv.includes('--no-build')) execFileSync('npm', ['run', 'build:sit
 if (!existsSync(join(site, 'editor/index.html'))) throw new Error('Build the complete web site first: npm run build:site');
 rmSync(out, { recursive: true, force: true });
 cpSync(site, out, { recursive: true });
+// AAPT omits dotfiles; Pages' marker is not an Android runtime asset.
+rmSync(join(out, '.nojekyll'), { force: true });
 const write = (path, text) => { mkdirSync(join(out, path, '..'), { recursive: true }); writeFileSync(join(out, path), text); };
 await esbuild.build({ entryPoints: [join(root, 'android/web/bridge.js')], outfile: join(out, 'assets/android.js'), bundle: true, format: 'iife', target: 'es2020', minify: true, external: ['node:*'] });
 cpSync(join(root, 'android/web/mobile.css'), join(out, 'assets/android.css'));
 write('assets/offline-palettes.json', JSON.stringify(PALETTES));
 
-const inject = html => html.replace('</head>', '<link rel="stylesheet" href="../assets/android.css">\n<script defer src="../assets/android.js"></script>\n</head>');
-write('editor/index.html', inject(readFileSync(join(out, 'editor/index.html'), 'utf8')));
+function integrateHTML(dir) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const path = join(dir, entry.name);
+    if (entry.isDirectory()) integrateHTML(path);
+    else if (path.endsWith('.html')) {
+      const assets = relative(dirname(path), join(out, 'assets')).replaceAll('\\', '/');
+      const css = path === join(out, 'editor/index.html') ? `<link rel="stylesheet" href="${assets}/android.css">\n` : '';
+      writeFileSync(path, readFileSync(path, 'utf8').replace('</head>', `${css}<script defer src="${assets}/android.js"></script>\n</head>`));
+    }
+  }
+}
+integrateHTML(out);
 
 // The classic editor is reachable through the site's navigation. Preserve it too.
 const modules = join(root, 'node_modules');

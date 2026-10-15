@@ -7,4 +7,10 @@
         <item name="android:windowBackground">#111214</item>
         <item name="android:colorAccent">#8f80f5</item>
     </style>
+    <style name="AppThemeLight" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:fontFamily">sans</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:windowBackground">#f5f5f6</item>
+        <item name="android:colorAccent">#6553d6</item>
+    </style>
 </resources>

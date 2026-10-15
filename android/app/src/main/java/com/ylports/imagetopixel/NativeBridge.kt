@@ -22,6 +22,8 @@ class NativeBridge(private val activity: MainActivity) : AutoCloseable {
             "clipboardWrite" -> activity.share(args.getString("token"), true, reply)
             "clipboardText", "clipboardRead", "clipboardReadText" -> clipboard(method, args, reply)
             "ready" -> { activity.editorReady = true; reply(true, null) }
+            "appearance" -> { activity.appearance(args.getString("color")); reply(true, null) }
+            "notify" -> { activity.notifyUser(args.optString("message").take(500)); reply(true, null) }
             else -> activity.io.execute {
                 try {
                     val result: Any? = when (method) {
