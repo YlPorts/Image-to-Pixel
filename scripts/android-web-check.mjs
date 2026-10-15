@@ -151,9 +151,8 @@ try {
   assert.equal(await apk.page.evaluate(() => window.itpEditor.store.settings.palette.colors.length), 3);
   report.flows.push({ paletteImport: 'HEX', colors: 3 });
 
-  // Dispatch real browser touch input, including the one-finger continuation of
-  // a pinch. This exercises pointer capture/cancellation rather than calling
-  // the stage's zoom or pan methods directly.
+  // Dispatch browser touch input instead of calling stage methods. CDP's public
+  // touchEnd ends all touches; the Android test checks lifting just one finger.
   const cdp = await apk.ctx.newCDPSession(apk.page);
   const bounds = await apk.page.locator('.itp-view').boundingBox();
   const cx = bounds.x + bounds.width / 2, cy = bounds.y + bounds.height / 2;
@@ -167,25 +166,25 @@ try {
   near(v1.zoom / v0.zoom, 1.5, 'Two-finger pinch zoom', 0.01);
   near(v1.x, (v0.x - bounds.width / 2) * 1.5 + bounds.width / 2 + 15, 'Pinch midpoint pans horizontally');
   near(v1.y, (v0.y - bounds.height / 2) * 1.5 + bounds.height / 2 + 8, 'Pinch midpoint pans vertically');
-  // CDP identifies the finger being released, rather than the remaining one.
-  await touch('touchEnd', [[2, cx + 60 + 15, cy + 8]]);
-  await touch('touchMove', [[1, cx - 60 + 35, cy + 20]]);
-  const v2 = await view();
-  near(v2.x - v1.x, 20, 'Remaining finger continues horizontal pan');
-  near(v2.y - v1.y, 12, 'Remaining finger continues vertical pan');
-  near(v2.zoom, v1.zoom, 'One-finger pan keeps zoom', 0.01);
   await touch('touchEnd', []);
   await touch('touchStart', [[3, cx, cy]]);
+  await touch('touchMove', [[3, cx + 20, cy + 12]]);
+  const v2 = await view();
+  near(v2.x - v1.x, 20, 'Single finger pans horizontally');
+  near(v2.y - v1.y, 12, 'Single finger pans vertically');
+  near(v2.zoom, v1.zoom, 'One-finger pan keeps zoom', 0.01);
+  await touch('touchEnd', []);
+  await touch('touchStart', [[4, cx, cy]]);
   await touch('touchCancel', []);
   assert.equal(await apk.page.locator('.itp-view').evaluate(el => el.classList.contains('panning')), false, 'Cancelled touches release the stage');
   const v3 = await view();
-  await touch('touchStart', [[4, cx, cy]]);
-  await touch('touchMove', [[4, cx + 12, cy + 5]]);
+  await touch('touchStart', [[5, cx, cy]]);
+  await touch('touchMove', [[5, cx + 12, cy + 5]]);
   await touch('touchEnd', []);
   const v4 = await view();
   near(v4.x - v3.x, 12, 'Pan works after touch cancellation');
   near(v4.y - v3.y, 5, 'No vertical jump after touch cancellation');
-  report.flows.push({ touch: ['pinch', 'midpoint pan', 'one-finger continuation', 'cancel and restart'] });
+  report.flows.push({ touch: ['pinch', 'midpoint pan', 'single-finger pan', 'cancel and restart'] });
   await cdp.detach();
   await web.ctx.close(); await apk.ctx.close();
   assert.deepEqual(problems, [], 'No page errors');

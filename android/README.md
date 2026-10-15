@@ -114,7 +114,7 @@ La prueba compara temas claro/oscuro a 360×800, 800×360 y 1440×900; verifica 
 colores, paneles, botones accesibles, los 17 dithers con igualdad exacta de RGBA,
 PNG/ZIP/GIF/sprite sheet/tileset/JSON, importación de paleta y recuperación de sesión.
 También inyecta entrada táctil para comprobar pellizco, desplazamiento del centro,
-continuación con un dedo y cancelación del gesto.
+desplazamiento con un dedo y cancelación del gesto.
 El puente de almacenamiento se simula en esta prueba de navegador; **no sustituye
 las pruebas Android**. Las capturas y `comparison.json` se publican como artifact.
 
@@ -126,6 +126,8 @@ compatibles se leen con MediaExtractor para verificar dimensiones, fotogramas y
 marcas de tiempo, y cada fotograma atraviesa varios bloques del puente nativo.
 El workflow desactiva Wi-Fi/datos y activa modo avión en Android 15/API 35 AOSP ATD,
 con Android Emulator 35.6.11 fijado.
+La instrumentación habilita el dibujo mediante `HardwareRendererCompat` antes de
+crear la actividad: ATD lo desactiva por defecto y produciría capturas negras.
 Las capturas reales y logs están en **Android-device-tests**.
 
 La reproducción de cada códec depende de Android System WebView y del hardware.

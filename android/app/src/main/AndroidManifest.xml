@@ -5,6 +5,7 @@
     <uses-feature android:glEsVersion="0x00030000" android:required="false" />
     <application
         android:allowBackup="false"
+        android:enableOnBackInvokedCallback="true"
         android:hardwareAccelerated="true"
         android:icon="@drawable/ic_launcher"
         android:label="Image-to-Pixel"

@@ -11,6 +11,7 @@ import android.media.MediaFormat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.platform.graphics.HardwareRendererCompat
 import androidx.test.espresso.intent.Intents
 import androidx.test.espresso.intent.matcher.IntentMatchers.hasAction
 import android.app.Instrumentation.ActivityResult
@@ -35,6 +36,10 @@ class EditorDeviceTest {
     private val instrumentation get() = InstrumentationRegistry.getInstrumentation()
 
     @Before fun open() {
+        // ATD images disable drawing by default. Pixel parity and screenshots
+        // must use real rendering, just as the installed app does on a phone.
+        instrumentation.runOnMainSync { HardwareRendererCompat.setDrawingEnabled(true) }
+        assertTrue("Hardware drawing is required for pixel tests", HardwareRendererCompat.isDrawingEnabled())
         scenario = ActivityScenario.launch(MainActivity::class.java)
         waitFor { js("Boolean(window.itpAndroid?.ready)") == "true" }
         async("window.itpEditor.app.clearItems(); await window.itpEditor.idle(); return true")
@@ -64,9 +69,11 @@ class EditorDeviceTest {
         return result!!
     }
     private fun screenshot(name: String) {
+        async("await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));return true")
         val output = File(instrumentation.targetContext.getExternalFilesDir(null), "test-results/$name.png")
         output.parentFile!!.mkdirs()
         val bitmap = instrumentation.uiAutomation.takeScreenshot()
+        assertTrue("The screenshot must contain the rendered UI", (1..20).any { i -> bitmap.getPixel(bitmap.width * i / 21, bitmap.height * i / 21) and 0xffffff != 0 })
         output.outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
         bitmap.recycle()
     }
@@ -98,9 +105,13 @@ class EditorDeviceTest {
             let diff=0;for(let i=0;i<expected.data.length;i++)if(expected.data[i]!==api.result.data[i])diff++;
             cpu.destroy();
             const saved=await window.itpPlatform.download(await api.result.toBlob(),'device-test.png');
-            return {width:api.result.width,height:api.result.height,diff,uri:saved.uri};
+            return {width:api.result.width,height:api.result.height,diff,uri:saved.uri,backend:api.result.backend,
+                actual:Array.from(api.result.data.slice(0,16)),expected:Array.from(expected.data.slice(0,16)),
+                actualBytes:api.result.data.length,expectedBytes:expected.data.length};
         """).getJSONObject("value")
-        assertEquals(0, result.getInt("diff"))
+        val reportDir = File(instrumentation.targetContext.getExternalFilesDir(null), "test-results").apply { mkdirs() }
+        File(reportDir, "pixel-comparison.json").writeText(result.toString(2))
+        assertEquals(result.toString(), 0, result.getInt("diff"))
         val uri = Uri.parse(result.getString("uri"))
         val resolver = instrumentation.targetContext.contentResolver
         try {
@@ -228,7 +239,7 @@ class EditorDeviceTest {
             Intents.intended(hasAction(Intent.ACTION_OPEN_DOCUMENT))
             tap(".itp-top > .primary")
             assertEquals("true", js("Boolean(document.querySelector('.itp-menu'))"))
-            scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+            assertTrue(instrumentation.uiAutomation.performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_BACK))
             waitFor { js("Boolean(document.querySelector('.itp-menu'))") == "false" }
             screenshot("picker-imported")
         } finally { Intents.release(); image.delete() }
