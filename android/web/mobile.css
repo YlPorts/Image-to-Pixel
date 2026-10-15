@@ -1,0 +1,32 @@
+/* Integration fixes only. The original tokens, fonts, icons and layout come first. */
+html { overscroll-behavior: none; }
+.itp { -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
+.itp input, .itp textarea, .itp [contenteditable="true"] { -webkit-user-select: text; user-select: text; }
+.itp-top > button, .itp-top > a { flex-shrink: 0; }
+.itp-top { overflow-x: auto; scrollbar-width: none; }
+.itp-top::-webkit-scrollbar { display: none; }
+.itp-menu { max-height: calc(100dvh - 16px); overflow-y: auto; overscroll-behavior: contain; }
+.itp-dialog[open] { display: flex; flex-direction: column; max-height: calc(100dvh - 24px); }
+.itp-dialog > header, .itp-dialog > footer { flex-shrink: 0; }
+.itp-dialog > .content { min-height: 0; }
+.itp-lib { max-width: calc(100vw - 40px); }
+.itp input[type="range"] { touch-action: pan-y; }
+@media (max-width: 680px) {
+  .itp-insp { max-height: 46dvh; }
+  .itp-file { grid-column: 3; grid-row: 1; }
+  .itp-file .name { min-width: 0; }
+  .itp-top .spacer, .itp-top > span:not(.android-history):not(.android-extra) { display: none; }
+  /* Two rows of the same controls, preserving their original sizes and icons. */
+  .itp-top { display: grid; grid-template-columns: 30px 30px minmax(96px, 1fr) 120px; grid-template-rows: 30px 30px; gap: 2px 4px; align-content: center; }
+  .itp-app { grid-template-rows: 78px minmax(0, 1fr) auto; }
+  .itp-top > .itp-brand { grid-column: 2; grid-row: 1; padding: 0 6px; }
+  .itp-top > button[title="Toggle library (\\)"] { grid-column: 1; grid-row: 1; }
+  .itp-top > button[title="Compare with original (C)"] { grid-column: 1; grid-row: 2; }
+  .itp-top > button[title="Pixel grid (G)"] { grid-column: 2; grid-row: 2; }
+  .itp-top > .itp-zoom { grid-column: 3; grid-row: 2; justify-self: start; }
+  .itp-top > button[title="Toggle inspector (/)"] { grid-column: 3; grid-row: 2; justify-self: end; }
+  .itp-top > .primary { grid-column: 4; grid-row: 2; justify-self: end; }
+  .itp-top .android-history { display: flex; grid-column: 4; grid-row: 1; height: 30px; justify-content: flex-start; }
+  .itp-top .android-extra { display: flex; grid-column: 4; grid-row: 1; justify-self: end; height: 30px; }
+  .itp-top .android-history .sep { display: none; }
+}

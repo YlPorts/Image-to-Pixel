@@ -79,14 +79,22 @@
     "clean": "node scripts/clean.mjs",
     "test": "npm run build:site && node --test",
     "prepublishOnly": "npm test",
-    "check:runtime": "node scripts/nodepod-check.mjs"
+    "check:runtime": "node scripts/nodepod-check.mjs",
+    "build:android": "node scripts/build-android.mjs",
+    "check:android": "node scripts/check-android.mjs",
+    "test:android-web": "node scripts/android-web-check.mjs"
   },
   "dependencies": {
     "shadermate": "^2.0.0"
   },
   "devDependencies": {
+    "@fontsource-variable/jetbrains-mono": "5.2.8",
+    "@fontsource/inter": "5.2.8",
+    "@fortawesome/fontawesome-free": "6.5.1",
+    "@simonwep/pickr": "1.9.1",
     "esbuild": "^0.25.12",
     "highlight.js": "^11.12.0",
-    "marked": "^15.0.12"
+    "marked": "^15.0.12",
+    "playwright": "1.58.2"
   }
 }

@@ -171,7 +171,7 @@ export function uniqueColors(image: RGBAImage, limit?: number): string[];
 export function detectGrid(image: RGBAImage, tolerance?: number): number;
 export function hasTransparency(image: RGBAImage): boolean;
 export function toCanvas(image: RGBAImage, scale?: number, opts?: { grid?: boolean; gridColor?: string; canvas?: HTMLCanvasElement }): HTMLCanvasElement;
-export function downloadBlob(data: Blob | Uint8Array | string, filename: string, type?: string): void;
+export function downloadBlob(data: Blob | Uint8Array | string, filename: string, type?: string): Promise<unknown>;
 export function encodePNG(image: RGBAImage, opts?: PNGOptions): Promise<Uint8Array>;
 export function encodeGIF(frames: (RGBAImage & { delay?: number })[], opts?: { loop?: number; scale?: number; delay?: number }): Uint8Array;
 export function createZip(entries: { name: string; data: Uint8Array | string; date?: Date }[]): Uint8Array;

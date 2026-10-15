@@ -5,6 +5,7 @@ const root = document.getElementById('editor');
 mountEditor(root, { homeHref: '../' })
   .then(editor => {
     window.itpEditor = editor;   // handy for debugging and for the screenshot script
+    awaitPlatform(editor);
     const sample = new URLSearchParams(location.search).get('sample');
     if (sample) editor.openSample(sample);
   })
@@ -15,3 +16,7 @@ mountEditor(root, { homeHref: '../' })
     p.textContent = `The editor could not start: ${err.message}. Try a current version of Chrome, Edge, Firefox or Safari.`;
     root.append(p);
   });
+
+function awaitPlatform(editor) {
+  globalThis.itpPlatform?.attach?.(editor).catch(err => editor.app.toast(`Session: ${err.message}`, { kind: 'error' }));
+}
